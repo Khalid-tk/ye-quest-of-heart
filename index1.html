@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Ye Quest of Heart</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative&display=swap');
+
+  /* Dark vintage tiled background */
+  body {
+    margin: 0;
+    height: 100vh;
+    background-color: #0e0b0a;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 30px 30px;
+    font-family: 'Cinzel Decorative', serif;
+    color: #f3e9dc;
+    user-select: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 1rem;
+  }
+
+  header {
+    font-size: 3rem;
+    margin: 1rem 0 0.5rem 0;
+    letter-spacing: 0.15em;
+    text-shadow: 0 0 4px #a57c55;
+  }
+
+  #gameArea {
+    position: relative;
+    background: #1c1816;
+    border: 2px solid #a57c55;
+    border-radius: 15px;
+    width: 700px;
+    height: 450px;
+    overflow: hidden;
+    box-shadow: 0 0 15px 4px #a57c55aa;
+  }
+
+  /* Quill (player) - line art style */
+  .quill {
+    position: absolute;
+    width: 60px;
+    height: 100px;
+    left: 320px;
+    bottom: 10px;
+    stroke: #f3e9dc;
+    stroke-width: 2;
+    fill: none;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  /* Manuscripts to catch */
+  .manuscript {
+    position: absolute;
+    width: 40px;
+    height: 60px;
+    border: 2px solid #a57c55;
+    background: #3a2f24;
+    border-radius: 6px;
+    box-shadow: 0 0 8px 2px #a57c5577;
+    font-family: 'Cinzel Decorative', serif;
+    color: #f3e9dc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    user-select: none;
+  }
+
+  /* Ink blot curses */
+  .inkblot {
+    position: absolute;
+    width: 50px;
+    height: 50px;
+    background: radial-gradient(circle at center, #3a2f24, #000000dd);
+    border-radius: 50% / 70%;
+    box-shadow:
+      5px 10px 15px #000000cc inset,
+      -5px -8px 12px #4b3d2d inset;
+    filter: drop-shadow(0 0 8px #441c0d);
+    user-select: none;
+  }
+
+  /* Scoreboard & messages */
+  #scoreboard {
+    margin: 1rem 0 0.5rem 0;
+    font-size: 1.3rem;
+    color: #d8c8b8;
+    letter-spacing: 0.1em;
+    user-select: none;
+  }
+
+  #message {
+    font-style: italic;
+    color: #a57c55;
+    min-height: 1.3em;
+    user-select: none;
+  }
+
+  /* End game popup */
+  #endPopup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.7);
+    background: #2a231ddd;
+    border: 2px solid #a57c55;
+    border-radius: 15px;
+    padding: 2.5rem 3rem;
+    box-shadow: 0 0 30px 8px #a57c55cc;
+    text-align: center;
+    font-family: 'Cinzel Decorative', serif;
+    color: #f3e9dc;
+    font-size: 1.6rem;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.5s ease, transform 0.5s ease;
+    user-select: none;
+    max-width: 400px;
+    z-index: 1000;
+  }
+
+  #endPopup.show {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translate(-50%, -50%) scale(1);
+  }
+
+  #endPopup button {
+    margin-top: 2rem;
+    background-color: #a57c55;
+    border: none;
+    color: #1c1816;
+    font-size: 1.3rem;
+    padding: 0.8rem 2.5rem;
+    border-radius: 12px;
+    cursor: pointer;
+    box-shadow: 0 6px 18px #6f552faa;
+    transition: background-color 0.3s ease;
+    font-family: 'Cinzel Decorative', serif;
+    user-select: none;
+  }
+
+  #endPopup button:hover {
+    background-color: #7a5a2f;
+  }
+</style>
+</head>
+<body>
+
+<header>Ye Quest of Heart</header>
+
+<div id="gameArea" aria-label="A vintage style game where thou dost catch illuminated manuscripts and avoid ink blot curses.">
+  <!-- Quill SVG -->
+  <svg class="quill" viewBox="0 0 60 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" >
+    <path d="M10 90 Q15 80 25 70 Q30 60 50 20 Q45 10 30 15 Q20 10 10 30 Q0 50 10 90 Z" stroke="#f3e9dc" fill="none" stroke-width="2" />
+    <line x1="20" y1="60" x2="40" y2="40" stroke="#f3e9dc" stroke-width="1.5" />
+    <line x1="25" y1="70" x2="35" y2="55" stroke="#f3e9dc" stroke-width="1.5" />
+  </svg>
+</div>
+
+<div id="scoreboard" aria-live="polite" aria-atomic="true">Score: 0 / 12</div>
+<div id="message" aria-live="polite"></div>
+
+<div id="endPopup" role="dialog" aria-modal="true" aria-labelledby="endTitle" aria-describedby="endDesc">
+  <div id="endTitle">Well met, fair maiden! 🌿</div>
+  <div id="endDesc" style="margin-top: 1rem; font-size: 1.2rem; line-height: 1.4;">
+    Thou hast captured mine heart with grace and valor.<br/>
+    Wilt thou accompany me for a cup of coffee? ☕
+  </div>
+  <button id="coffeeBtn">Yea, with great joy ☕</button>
+</div>
+
+<script>
+  const gameArea = document.getElementById('gameArea');
+  const quill = document.querySelector('.quill');
+  const scoreboard = document.getElementById('scoreboard');
+  const message = document.getElementById('message');
+  const endPopup = document.getElementById('endPopup');
+  const coffeeBtn = document.getElementById('coffeeBtn');
+
+  const GAME_WIDTH = gameArea.clientWidth;
+  const GAME_HEIGHT = gameArea.clientHeight;
+  const QUILL_WIDTH = quill.clientWidth;
+  const QUILL_HEIGHT = quill.clientHeight;
+
+  let score = 0;
+  const GOAL = 12;
+  let gameOver = false;
+
+  // Position quill horizontally at bottom, follow mouse X
+  let quillX = GAME_WIDTH / 2 - QUILL_WIDTH / 2;
+  let quillY = GAME_HEIGHT - QUILL_HEIGHT - 10;
+  quill.style.left = quillX + 'px';
+  quill.style.bottom = '10px';
+
+  gameArea.addEventListener('mousemove', e => {
+    if(gameOver) return;
+    const rect = gameArea.getBoundingClientRect();
+    quillX = e.clientX - rect.left - QUILL_WIDTH / 2;
+    quillX = Math.max(0, Math.min(quillX, GAME_WIDTH - QUILL_WIDTH));
+    quill.style.left = quillX + 'px';
+  });
+
+  // Create manuscripts (falling)
+  function createManuscript() {
+    const ms = document.createElement('div');
+    ms.classList.add('manuscript');
+
+    // Random letter from old English style alphabet (we'll use letters A, E, I, O, U for elegance)
+    const letters = ['A','E','I','O','U'];
+    ms.textContent = letters[Math.floor(Math.random()*letters.length)];
+
+    resetManuscriptPosition(ms);
+
+    gameArea.appendChild(ms);
+    return ms;
+  }
+
+  function resetManuscriptPosition(ms) {
+    ms.style.top = '-60px';
+    ms.style.left = Math.random() * (GAME_WIDTH - 40) + 'px';
+    ms.style.opacity = '1';
+  }
+
+  // Create ink blot curses (falling obstacles)
+  function createInkblot() {
+    const ib = document.createElement('div');
+    ib.classList.add('inkblot');
+    resetInkblotPosition(ib);
+    gameArea.appendChild(ib);
+    return ib;
+  }
+
+  function resetInkblotPosition(ib) {
+    ib.style.top = '-50px';
+    ib.style.left = Math.random() * (GAME_WIDTH - 50) + 'px';
+    ib.style.opacity = '1';
+  }
+
+  // Generate initial manuscripts and inkblots
+  const manuscripts = [];
+  const inkblots = [];
+
+  for(let i=0; i<6; i++) manuscripts.push(createManuscript());
+  for(let i=0; i<3; i++) inkblots.push(createInkblot());
+
+  // Collision detection helper
+  function isColliding(a, b) {
+    const aRect = a.getBoundingClientRect();
+    const bRect = b.getBoundingClientRect();
+    return !(
+      aRect.right < bRect.left ||
+      aRect.left > bRect.right ||
+      aRect.bottom < bRect.top ||
+      aRect.top > bRect.bottom
+    );
+  }
+
+  // Game loop for movement and collision
+  function gameLoop() {
+    if(gameOver) return;
+
+    manuscripts.forEach(ms => {
+      let top = parseFloat(ms.style.top);
+      top += 2;
+      ms.style.top = top + 'px';
+
+      if(top > GAME_HEIGHT) resetManuscriptPosition(ms);
+
+      if(isColliding(quill, ms)) {
+        score++;
+        scoreboard.textContent = `Score: ${score} / ${GOAL}`;
+        message.textContent = "Thou hast caught a manuscript!";
+
+        resetManuscriptPosition(ms);
+
+        if(score >= GOAL) {
+          endGame();
+        }
+      }
+    });
+
+    inkblots.forEach(ib => {
+      let top = parseFloat(ib.style.top);
+      top += 3;
+      ib.style.top = top + 'px';
+
+      if(top > GAME_HEIGHT) resetInkblotPosition(ib);
+
+      if(isColliding(quill, ib)) {
+        message.textContent = "Alas! An ink blot curses thee! Score doth decrease.";
+        score = Math.max(0, score - 1);
+        scoreboard.textContent = `Score: ${score} / ${GOAL}`;
+        resetInkblotPosition(ib);
+      }
+    });
+
+    requestAnimationFrame(gameLoop);
+  }
+
+  function endGame() {
+    gameOver = true;
+    message.textContent = "Thou hast fulfilled thy quest!";
+    endPopup.classList.add('show');
+  }
+
+  // Yes button sends data to Google Form, then shows alert and closes popup
+  coffeeBtn.addEventListener('click', () => {
+    const formData = new FormData();
+    formData.append('entry.2127840587', 'Yes'); // Your Google Form entry ID
+    
+    fetch('https://docs.google.com/forms/d/e/1FAIpQLScL0RS1mDsiaw0VYAQ54s0BKtAFisEvmZCpQHkk08KHg4JMfw/formResponse', {
+      method: 'POST',
+      mode: 'no-cors',
+      body: formData
+    }).then(() => {
+      alert("I eagerly await our rendezvous o'er coffee ☕");
+      endPopup.classList.remove('show');
+    }).catch(() => {
+      alert("Something went wrong, but I still await our coffee ☕");
+      endPopup.classList.remove('show');
+    });
+  });
+
+  gameLoop();
+</script>
+
+</body>
+</html>
+
+
